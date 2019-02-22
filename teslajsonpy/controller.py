@@ -25,12 +25,14 @@ class Controller:
         self.__state = {}
         self.__driving = {}
         self.__gui = {}
-        self._last_update_time = {}
-        self._last_wake_up_time = {}
+        self._last_update_time = {}  # succesful attempts by car
+        self._last_wake_up_time = {}  # succesful wake_ups by car
+        self._last_attempted_update_time = 0  # all attempts by controller
         self.__lock = RLock()
         self._car_online = {}
 
         cars = self.get_vehicles()
+        self._last_attempted_update_time = time.time()
 
         for car in cars:
             self._last_update_time[car['id']] = 0
@@ -160,9 +162,9 @@ class Controller:
         """Updates all vehicle attributes in the cache.
 
         This command will connect to the Tesla API and first update the list of
-        online vehicles. It will then update all the cached values for cars
-        that are awake assuming no update has occurred for at least the
-        [update_interval].
+        online vehicles assuming no attempt for at least the [update_interval].
+        It will then update all the cached values for cars that are awake
+        assuming no update has occurred for at least the [update_interval].
 
         Args:
         inst (Controller): The instance of a controller
@@ -177,13 +179,15 @@ class Controller:
         """
         cur_time = time.time()
         with self.__lock:
-            # Check if any vehicles have been updated recently
-            last_update = max(self._last_update_time.values())
+            #  Update the online cars using get_vehicles()
+            last_update = self._last_attempted_update_time
             if (force or cur_time - last_update > self.update_interval):
                 cars = self.get_vehicles()
                 for car in cars:
                     self._car_online[car['id']] = (car['state'] == 'online')
+            self._last_attempted_update_time = cur_time
             # Only update online vehicles that haven't been updated recently
+            # The throttling is per car's last succesful update
             # Note: This separate check is because there may be individual cars
             # to update.
             for id, v in self._car_online.items():
