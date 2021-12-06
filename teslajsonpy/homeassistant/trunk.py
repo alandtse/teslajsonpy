@@ -47,7 +47,7 @@ class TrunkLock(VehicleDevice):
         last_update = self._controller.get_last_update_time(self._id)
         if last_update >= self.__manual_update_time:
             data = self._controller.get_state_params(self._id)
-            self.__lock_state = data["rt"] if (data and "rt" in data) else None
+            self.__lock_state = data.get("rt")
 
     def is_locked(self):
         """Return whether the rear trunk is closed."""
@@ -121,7 +121,7 @@ class FrunkLock(VehicleDevice):
         last_update = self._controller.get_last_update_time(self._id)
         if last_update >= self.__manual_update_time:
             data = self._controller.get_state_params(self._id)
-            self.__lock_state = data["ft"] if (data and "ft" in data) else None
+            self.__lock_state = data.get("ft")
 
     def is_locked(self):
         """Return whether the front trunk (frunk) is closed."""
