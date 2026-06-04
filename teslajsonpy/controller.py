@@ -660,19 +660,22 @@ class Controller:
                     response = None
 
                 if response:
+                    drive_state = response.get("drive_state") or {}
+                    shift_state = drive_state.get("shift_state")
                     if (
                         self.cars[vin].is_climate_on
-                        and self.cars[vin].is_climate_on
-                        != response["drive_state"]["shift_state"]
-                        and (
-                            response["drive_state"]["shift_state"] is None
-                            or response["drive_state"]["shift_state"] == "P"
-                        )
+                        and self.cars[vin].is_climate_on != shift_state
+                        and (shift_state is None or shift_state == "P")
                     ):
+                        drive_state_timestamp = drive_state.get("timestamp")
                         self.set_last_park_time(
                             vin=vin,
-                            timestamp=response["drive_state"]["timestamp"] / 1000,
-                            shift_state=response["drive_state"]["shift_state"],
+                            timestamp=(
+                                time.time()
+                                if drive_state_timestamp is None
+                                else drive_state_timestamp / 1000
+                            ),
+                            shift_state=shift_state,
                         )
                     self._last_update_time[vin] = round(time.time())
 
